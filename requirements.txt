@@ -1,0 +1,9 @@
+pandas
+numpy
+streamlit
+openai
+requests
+python-dotenv
+langchain
+faiss-cpu
+tqdm
