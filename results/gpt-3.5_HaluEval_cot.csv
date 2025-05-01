@@ -1,0 +1,11 @@
+query,generated_answer,true_answer,label
+[CLS] is the moon made of cheese? [SEP],"1. The moon is a natural satellite of Earth, not a food product.
+2. Cheese is a dairy product made from milk, typically from cows, goats, or sheep.
+3. There is no scientific evidence or logical reasoning to suggest that the moon is made of cheese.
+4. The composition of the moon is primarily rock and dust, not dairy products.
+5. Therefore, it is not accurate to say that the moon is made of cheese.",[CLS] no [SEP],Correct
+[CLS] does 2 + 2 = 22? [SEP],"1. The question asks if 2 + 2 equals 22.
+2. The basic operation of addition involves combining two or more numbers to find their sum.
+3. When we add 2 and 2 together, we get a sum of 4 (2 + 2 = 4).
+4. The number 22 is not the result of adding 2 and 2 together.
+5. Therefore, 2 + 2 does not equal 22.",[CLS] no [SEP],Correct

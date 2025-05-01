@@ -6,4 +6,10 @@ requests
 python-dotenv
 langchain
 faiss-cpu
+pinecone
+torch
+torchvision
+transformers
+sentence-transformers
+wikipedia-api
 tqdm

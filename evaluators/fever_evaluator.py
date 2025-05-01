@@ -1,16 +1,18 @@
 import json
 from chain_of_thought import ChainOfThoughtLLM
+from self_consistency import SelfConsistencyLLM
 from tqdm import tqdm
 import random
+from self_verification import evaluate_self_verification
+from rag import evaluate_rag
 from collections import defaultdict, Counter
 from datasets import load_dataset, DownloadConfig
 from config import HF_TOKEN
 import os
 
-
 class FEVEREvaluator:
-    def __init__(self, model_name="gpt-4o-mini", inference_type="cot"):
-        self.llm = ChainOfThoughtLLM(model_name=model_name)
+    def __init__(self, model_name="gpt-3.5-turbo", inference_type="cot"):
+        self.model_name = model_name
         self.inference_type = inference_type
 
     def group_claims(self, data):
@@ -22,7 +24,6 @@ class FEVEREvaluator:
 
             grouped[claim_id]["claim"] = claim
             grouped[claim_id]["labels"].append(label)
-        print("Grouped function ran")
         return grouped
 
     def majority_label(self, labels):
@@ -32,8 +33,6 @@ class FEVEREvaluator:
     def evaluate(self, num_samples=100):
         data = load_dataset("fever", "v1.0", split="train", token=HF_TOKEN, trust_remote_code=True)
         sample_count = min(num_samples, len(data))
-        print(f"Sample count: {sample_count}")
-        print(f"Dataset Sample: {data[:20]}")
 
         
         data = data[:num_samples]
@@ -41,7 +40,6 @@ class FEVEREvaluator:
         total = 0
         results = []
 
-        # Convert FEVER-style labels to your expected format
         label_map = {
             "SUPPORTS": "Supported",
             "REFUTES": "Refuted",
@@ -67,10 +65,16 @@ class FEVEREvaluator:
 
                 Respond with one of: Supported, Refuted, NotEnoughInfo.
                 """
-            
-            cot = ChainOfThoughtLLM(model_name='gpt-4o-mini')
-            # result = cot.answer_question(prompt, data_type="halueval")
-            result = cot.answer_question(prompt, data_type="fever")
+            if self.inference_type == "cot":
+                llm = ChainOfThoughtLLM(self.model_name)
+            elif self.inference_type == "rag":
+                llm = evaluate_rag("fever", self.model_name)
+            elif self.inference_type == "Self Consistency":
+                llm = SelfConsistencyLLM(self.model_name)
+            elif self.inference_type == "Self Verification":
+                llm = evaluate_self_verification(self.model_name, "fever", num_samples)
+
+            result = llm.answer_question(prompt, data_type="fever")
             predicted = result["final_answer"].strip().capitalize()
 
             # Normalize
@@ -91,8 +95,6 @@ class FEVEREvaluator:
                 "is_correct": is_correct,
                 "reasoning": result['full_reasoning']
             })
-
-            print(results)
 
         accuracy = correct / total if total > 0 else 0
         print(f"FEVER Accuracy: {accuracy:.2f} ({correct}/{total})")

@@ -93,7 +93,7 @@ class HaluEvalEvaluator:
         with torch.no_grad():
             logits = self.nli_model(**encoded).logits
             probs = F.softmax(logits, dim=-1).squeeze()
-        return probs[2].item()  # contradiction score
+        return probs[2].item()
 
     def _compute_bleurt_score(self, candidate, reference):
         inputs = self.bleurt_tokenizer(reference, candidate, return_tensors="pt", padding=True, truncation=True, max_length=512).to(self.device)

@@ -27,7 +27,7 @@ def generate_response(prompt, temperature=0.5, model_name="gpt-3.5"):
             )
             return response.choices[0].message.content
         except Exception as e:
-            logger.error(f"GPT-3.5 error: {str(e)}")
+            # logger.error(f"GPT-3.5 error: {str(e)}")
             return f"Mock GPT-3.5 response: {prompt[:50]}, (Error: {str(e)})"
     elif model_name == "llama-2":
         try:
@@ -41,8 +41,7 @@ def generate_response(prompt, temperature=0.5, model_name="gpt-3.5"):
             response = pipe(prompt, max_length=512, temperature=temperature)
             return response[0]["generated_text"]
         except Exception as e:
-            logger.error(f"LLaMA-2 error: {str(e)}")
-            return f"Mock LLaMA-2 response: {prompt[:50]}, (Error: {str(e)})"
+            return f"LLaMA-2 response: {prompt[:50]}, (Error: {str(e)})"
     elif model_name == "deepseek":
         try:
             from transformers import pipeline
@@ -50,8 +49,7 @@ def generate_response(prompt, temperature=0.5, model_name="gpt-3.5"):
             response = pipe(prompt, max_length=512, temperature=temperature)
             return response[0]["generated_text"]
         except Exception as e:
-            logger.error(f"DeepSeek error: {str(e)}")
-            return f"Mock DeepSeek response: {prompt[:50]}, (Error: {str(e)})"
+            return f"DeepSeek response: {prompt[:50]}, (Error: {str(e)})"
     else:
         raise ValueError(f"Unknown model: {model_name}")
 
@@ -68,12 +66,12 @@ def verify_answer(query, selected_answer, retrieved_docs, model_name="gpt-3.5"):
     verification_response = generate_response(verification_prompt, temperature=0.5, model_name=model_name)
     return "consistent and correct" in verification_response.lower(), verification_response
 
-def retrieve_documents(query, dataset_name="FEVER"):
+def retrieve_documents(query, dataset_name="fever"):
     """
-    Retrieve documents using Wikipedia for FEVER, fallback for others.
+    Retrieve documents using Wikipedia for fever, fallback for others.
     """
     wiki = wikipediaapi.Wikipedia("en")
-    if dataset_name == "FEVER":
+    if dataset_name == "fever":
         page_title = query.split()[0]
         page = wiki.page(page_title)
         if page.exists():
@@ -90,7 +88,7 @@ def preprocess_dataset(dataset_name, max_samples=100):
     if dataset_name == "HaluEval":
         halueval_path = "/Users/hwiyoonkim/Desktop/HwiyoonKim/NLP-CSCE638/halueval.json"
         if not os.path.exists(halueval_path):
-            logger.warning(f"HaluEval dataset not found at {halueval_path}. Using mock data.")
+            # logger.warning(f"HaluEval dataset not found at {halueval_path}. Using mock data.")
             data = [
                 {"query": "Is the moon made of cheese?", "answer": "No", "label": "Correct"},
                 {"query": "Does 2+2=22?", "answer": "No", "label": "Correct"}
@@ -106,7 +104,7 @@ def preprocess_dataset(dataset_name, max_samples=100):
         queries = [item["question"] for item in data]
         true_answers = [item["best_answer"] for item in data]
         labels = [1 if item["correct_answers"] else 0 for item in data]
-    elif dataset_name == "FEVER":
+    elif dataset_name == "fever":
         data = load_dataset("fever", "v1.0", split="test")[:max_samples]
         queries = [item["claim"] for item in data]
         true_answers = [item["evidence"] for item in data]
@@ -124,14 +122,14 @@ def evaluate_self_verification(model_name, dataset_name, max_samples=100):
     try:
         queries, true_answers, labels = preprocess_dataset(dataset_name, max_samples)
     except Exception as e:
-        logger.error(f"Error loading dataset {dataset_name}: {str(e)}")
+        # logger.error(f"Error loading dataset {dataset_name}: {str(e)}")
         return 0.0
 
     predicted_labels = []
     correct_count = 0
 
     for i, (query, true_answer, label) in enumerate(zip(queries, true_answers, labels)):
-        logger.info(f"Processing {dataset_name} sample {i+1}/{len(queries)} for {model_name}...")
+        # logger.info(f"Processing {dataset_name} sample {i+1}/{len(queries)} for {model_name}...")
         selected_answer = generate_response(query, temperature=0.5, model_name=model_name)
         retrieved_docs = retrieve_documents(query, dataset_name)
         is_correct, _ = verify_answer(query, selected_answer, retrieved_docs, model_name)
@@ -142,7 +140,7 @@ def evaluate_self_verification(model_name, dataset_name, max_samples=100):
         elif dataset_name == "TruthfulQA":
             predicted_label = 1 if is_correct else 0
             correct = predicted_label == label
-        elif dataset_name == "FEVER":
+        elif dataset_name == "fever":
             predicted_label = selected_answer if is_correct else "NOT ENOUGH INFO"
             correct = predicted_label == label
         else:
@@ -156,21 +154,21 @@ def evaluate_self_verification(model_name, dataset_name, max_samples=100):
     return round(accuracy * 100, 2) 
 
 def main():
-    models = ["gpt-3.5", "llama-2", "deepseek"]
-    datasets = ["HaluEval", "TruthfulQA", "FEVER"]
+    models = ["gpt-3.5-turbo", "llama-2", "deepseek"]
+    datasets = ["HaluEval", "TruthfulQA", "fever"]
     max_samples = 100
     results = []
 
     for model in models:
         for dataset in datasets:
-            logger.info(f"Evaluating {model} on {dataset}")
+            # logger.info(f"Evaluating {model} on {dataset}")
             accuracy = evaluate_self_verification(model, dataset, max_samples)
             results.append({
                 "Model": model,
                 "Dataset": dataset,
                 "Self-Verification Accuracy (%)": accuracy
             })
-            logger.info(f"{model} on {dataset}: Accuracy = {accuracy:.2f}%")
+            # logger.info(f"{model} on {dataset}: Accuracy = {accuracy:.2f}%")
 
     print("\nSelf-Verification Accuracy Chart (%):")
     results_df = pd.DataFrame(results)

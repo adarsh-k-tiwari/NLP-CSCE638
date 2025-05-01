@@ -1,12 +1,30 @@
 import json
 from chain_of_thought import ChainOfThoughtLLM
+from self_consistency import SelfConsistencyLLM
+from self_verification import evaluate_self_verification
+from rag import evaluate_rag
+from config import HF_TOKEN
+from transformers import AutoTokenizer, AutoModel
+import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 import random
 
 class HaluEvalEvaluator:
-    def __init__(self, model_name="gpt-4o-mini", inference_type="cot"):
+    def __init__(self, model_name="gpt-3.5-turbo", inference_type="cot"):
         self.inference_type = inference_type
+        # Embedding model
+        self.model_name = model_name
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.bert_tokenizer = AutoTokenizer.from_pretrained("bert-base-uncased", token=HF_TOKEN)
+        self.bert_model = AutoModel.from_pretrained("bert-base-uncased", token=HF_TOKEN).to(self.device)
 
+    def _get_embedding(self, text):
+        inputs = self.bert_tokenizer(text, return_tensors="pt", truncation=True, padding=True, max_length=512).to(self.device)
+        with torch.no_grad():
+            outputs = self.bert_model(**inputs)
+        return outputs.last_hidden_state.mean(dim=1).squeeze()
+    
     def evaluate(self, num_samples=100):
         data_file = "evaluators/halueval.json"
         with open(data_file, 'r', encoding='utf-8') as f:
@@ -36,6 +54,8 @@ class HaluEvalEvaluator:
             answer, label = random.choice(all_answers)
             if self.inference_type == "rag":
                 prompt = f"Context: {knowledge}\nQuestion: {question}\nAnswer: {answer}\n"
+            elif self.inference_type == "cot" or self.inference_type == "Self Consistency":
+                prompt = f"Question: {question}\nAnswer: {answer}\n"
             else:
                 prompt = f"Question: {question}\nAnswer: {answer}\n"
 
@@ -70,9 +90,22 @@ class HaluEvalEvaluator:
                     #Your Judgement#: No
 
                     You should try your best to determine if the answer contains non-factual or hallucinated information according to the above hallucination types. Do not add any extra words in your judgement or final answer. The answer you give MUST be either \"Yes\" or \"No\"."""
-            cot = ChainOfThoughtLLM(model_name='gpt-4o-mini')
-            result = cot.answer_question(prompt, data_type="halueval")
+
+            if self.inference_type == "cot":
+                llm = ChainOfThoughtLLM(self.model_name)
+            elif self.inference_type == "rag":
+                llm = evaluate_rag("fever", self.model_name)
+            elif self.inference_type == "Self Consistency":
+                llm = SelfConsistencyLLM(self.model_name)
+            elif self.inference_type == "Self Verification":
+                llm = evaluate_self_verification(self.model_name, "fever", num_samples)
+            
+            result = llm.answer_question(prompt, data_type="halueval")
             predicted = result['final_answer'].strip().capitalize()
+            gt_embedding = self._get_embedding(right_answers)
+            resp_embedding = self._get_embedding(predicted)
+
+            sim_score = F.cosine_similarity(gt_embedding.unsqueeze(0), resp_embedding.unsqueeze(0)).item()
             if predicted not in ['Yes', 'No']:
                 predicted = 'Invalid'
 

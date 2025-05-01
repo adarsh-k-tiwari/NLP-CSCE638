@@ -39,7 +39,7 @@ st.sidebar.header("Model Configuration")
 
 model_name = st.sidebar.selectbox(
     "Select LLM Model",
-    ["gpt-4o-mini", "LlaMa-2", "DeepSeek-R1"]
+    ["gpt-3.5-turbo", "llama-2-7b", "deepseek-r1"]
 )
 
 model_type = st.sidebar.radio(
@@ -73,13 +73,11 @@ with tab1:
                 st.markdown(response)
 
             elif model_type == "cot":
-                result = model.answer_question(user_question)
+                result = model.answer_question(user_question, None)
                 st.subheader("Chain of Thought Reasoning:")
                 st.markdown(result["full_reasoning"], unsafe_allow_html=True)
                 st.subheader("Final Answer:")
                 st.write(result["final_answer"])
-                st.subheader("Final Answer without CoT:")
-                st.write(result["response_no_cot"])
 
             elif model_type == "rag":
                 st.warning("RAG is not implemented yet.")
@@ -134,15 +132,7 @@ with tab2:
         if results['individual_results']:
             df = pd.DataFrame(results['individual_results'])
             st.dataframe(df)
-            st.subheader("Results Visualization")
-            fig, ax = plt.subplots()
-            ax.bar(['Correct', 'Incorrect'], 
-                   [results['overall_score'], 1-results['overall_score']])
-            ax.set_ylim(0, 1)
-            ax.set_ylabel('Proportion')
-            ax.set_title('TruthfulQA Results')
-            st.pyplot(fig)
-
+            
 # Tab 3: HaluEval Evaluation
 with tab3:
     st.header("HaluEval Hallucination Detection")
@@ -193,15 +183,7 @@ with tab4:
         if results['individual_results']:
             df = pd.DataFrame(results['individual_results'])
             st.dataframe(df)
-            st.subheader("Label Distribution")
-            if len(results['individual_results']) > 0:
-                predictions = [r['prediction'] for r in results['individual_results']]
-                labels, counts = np.unique(predictions, return_counts=True)
-                fig, ax = plt.subplots()
-                ax.bar(labels, counts)
-                ax.set_title('FEVER Predictions Distribution')
-                ax.set_ylabel('Count')
-                st.pyplot(fig)
+
 
 # Add comparative analysis when all evaluations are complete
 if all(st.session_state.results.values()):
