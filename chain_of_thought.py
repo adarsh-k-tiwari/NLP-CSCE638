@@ -54,7 +54,7 @@ class ChainOfThoughtLLM:
         while True:
             if self.model_name == "gpt-3.5-turbo":
                 response = self.client.chat.completions.create(
-                    model='gpt-4o-mini',
+                    model='gpt-3.5-turbo',
                     messages=messages,
                     temperature=temperature,
                     max_tokens=max_length
