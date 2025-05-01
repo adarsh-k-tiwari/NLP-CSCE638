@@ -18,19 +18,19 @@ This repository provides a Streamlit web application for evaluating hallucinatio
 ## Project Structure
 ```
 .NLP-CSCE638/
-|-- app.py # Streamlit app entry point 
-|-- config.py # Configuration (API keys, settings) 
-|-- chain_of_thought.py # CoT model logic 
-|-- rag.py # RAG implementation 
-|-- self_consistency.py # Self-consistency evaluator 
-|-- self_verification.py # Self-verification evaluator 
-|-- data_preprocessing.py # Dataset loaders and cleaning 
+|-- app.py                       # Streamlit app entry point 
+|-- config.py                    # Configuration (API keys, settings) 
+|-- chain_of_thought.py          # CoT model logic 
+|-- rag.py                       # RAG implementation 
+|-- self_consistency.py          # Self-consistency evaluator 
+|-- self_verification.py         # Self-verification evaluator 
+|-- data_preprocessing.py        # Dataset loaders and cleaning 
 |-- evaluators/ 
 |  |-- fever_evaluator.py 
 |  |-- halueval_evaluator.py 
 |  |-- truthfulqa_evaluator.py 
-|-- results/ # Evaluation outputs 
-|-- requirements.txt # Python dependencies
+|-- results/                     # Evaluation outputs 
+|-- requirements.txt             # Python dependencies
 ```
 
 ---
