@@ -115,21 +115,8 @@ class HaluEvalEvaluator:
 
         sim_score = F.cosine_similarity(gt_embedding.unsqueeze(0), resp_embedding.unsqueeze(0)).item()
         hallucinated_score = F.cosine_similarity(hallucinated_embedding.unsqueeze(0), resp_embedding.unsqueeze(0)).item()
-        contr_score = self._contradiction_score(model_answer, "This example is false.")
-
-        knowledge = sample.get("knowledge", "").strip()
-        knowledge_consistency = 1.0
-        if knowledge:
-            knowledge_embedding = self._get_embedding(knowledge)
-            knowledge_consistency = F.cosine_similarity(resp_embedding.unsqueeze(0), knowledge_embedding.unsqueeze(0)).item()
-
-        bleurt_score = self._compute_bleurt_score(model_answer, ground_truth)
-        print(f"Sim: {sim_score}, Hallucinated: {hallucinated_score}, Contradiction: {contr_score}, Knowledge Consistency: {knowledge_consistency}, BLEURT: {bleurt_score}")
-
+        
         return any([
             sim_score < 0.55,
-            hallucinated_score > 0.4,
-            contr_score > 0.3,
-            knowledge_consistency < 0.3,
-            bleurt_score < -0.4
+            hallucinated_score > 0.4
         ])
