@@ -19,7 +19,7 @@ openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 class SelfConsistencyLLM:
     def __init__(self, model_name="llama-2-7b", temperature=0.7, n=5):
         self.model_name = model_name
-        self.temperature = random.uniform(0.5, 0.9) if None else temperature
+        self.temperature = random.uniform(0.3, 0.7) if None else temperature
         self.n = n
         self.client = openai_client if model_name == "gpt-3.5-turbo" else None
         self.pipeline = self._load_hf_pipeline() if model_name in ["llama-2-7b", "deepseek-r1"] else None
@@ -66,7 +66,7 @@ class SelfConsistencyLLM:
     def generate_single_response(self, prompt):
         messages = [{"role": "user", "content": prompt}],
         max_length = 512
-        temperature = random.uniform(0.1, 0.9)
+        temperature = random.uniform(0.3, 0.7)
         if self.model_name == "openai":
                 response = self.client.chat.completions.create(
                     model=self.model_name,
@@ -99,7 +99,7 @@ class SelfConsistencyLLM:
             )
             return response.choices[0].message.content.strip()
         else:
-            output = self.pipeline(prompt, max_length=512, temperature=random.uniform(0.1, 0.9))
+            output = self.pipeline(prompt, max_length=512, temperature=random.uniform(0.3, 0.7))
             return output[0]["generated_text"].strip()
 
     def generate_multiple_responses(self, prompt):
